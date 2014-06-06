@@ -153,6 +153,7 @@ class TreemaNode
     @schema.id = '__base__' unless (@schema.id or @parent)
     @data = options.data
     @patches = []
+    @dataChanges = []
     @callbacks = @settings.callbacks
     @_defaults = defaults
     @_name = TreemaNode.pluginName
@@ -746,6 +747,26 @@ class TreemaNode
     @$el.addClass('treema-last-selected')
     TreemaNode.didSelect = true
 
+  #Save/restore state
+  saveData: ->
+    rootNode = @
+    delta = jsondiffpatch.diff rootNode.previousState, rootNode.data
+    console.log rootNode, delta, @
+    # rootNode.dataChanges.push delta
+    # rootNode.previousState = rootNode.copyData()
+    # rootNode.currentStateIndex = rootNode.dataChanges.length-1
+
+  undo: ->
+    return unless @currentStateIndex >= 0
+    delta = @dataChanges[@currentStateIndex]
+    jsondiffpatch.unpatch @data, delta
+    @currentStateIndex--
+
+  redo: ->
+    return unless @currentStateIndex isnt @dataChanges.length-1
+    delta = @dataChanges[@currentStateIndex]
+    jsondiffpatch.patch @data, delta
+    @currentStateIndex++
   # Working schemas -----------------------------------------------------------
 
   # Schemas can be flexible using combinatorial properties and references.

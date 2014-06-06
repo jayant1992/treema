@@ -285,6 +285,7 @@ TreemaNode = (function() {
     }
     this.data = options.data;
     this.patches = [];
+    this.dataChanges = [];
     this.callbacks = this.settings.callbacks;
     this._defaults = defaults;
     this._name = TreemaNode.pluginName;
@@ -1275,6 +1276,33 @@ TreemaNode = (function() {
     lastSelected.removeClass('treema-last-selected');
     this.$el.addClass('treema-last-selected');
     return TreemaNode.didSelect = true;
+  };
+
+  TreemaNode.prototype.saveData = function() {
+    var delta, rootNode;
+    rootNode = this;
+    delta = jsondiffpatch.diff(rootNode.previousState, rootNode.data);
+    return console.log(rootNode, delta, this);
+  };
+
+  TreemaNode.prototype.undo = function() {
+    var delta;
+    if (!(this.currentStateIndex >= 0)) {
+      return;
+    }
+    delta = this.dataChanges[this.currentStateIndex];
+    jsondiffpatch.unpatch(this.data, delta);
+    return this.currentStateIndex--;
+  };
+
+  TreemaNode.prototype.redo = function() {
+    var delta;
+    if (this.currentStateIndex === this.dataChanges.length - 1) {
+      return;
+    }
+    delta = this.dataChanges[this.currentStateIndex];
+    jsondiffpatch.patch(this.data, delta);
+    return this.currentStateIndex++;
   };
 
   TreemaNode.prototype.buildWorkingSchemas = function(originalSchema) {
